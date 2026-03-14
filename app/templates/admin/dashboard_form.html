@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Admin - {% if mode == 'new' %}Novo Dashboard{% else %}Editar Dashboard{% endif %}{% endblock %}
+
+{% block content %}
+<div class="bi-content admin-page">
+  <h2 class="mb-2">
+    {% if mode == 'new' %}Novo Dashboard{% else %}Editar Dashboard{% endif %}
+  </h2>
+  <p class="info-text mb-3">Preencha os campos e salve.</p>
+
+  {% include "admin/_nav.html" %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="card p-3">
+    <form method="POST" class="row g-3">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Setor</label>
+        <input class="form-control" name="sector" required value="{{ dash.sector if dash else '' }}" placeholder="ex: TI">
+      </div>
+
+      <div class="col-12 col-md-8">
+        <label class="form-label">Nome</label>
+        <input class="form-control" name="name" required value="{{ dash.name if dash else '' }}" placeholder="ex: GLPI - Operacional">
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Slug (único)</label>
+        <input class="form-control" name="slug" required value="{{ dash.slug if dash else '' }}" placeholder="ex: glpi-operacional">
+        <div class="form-text text-light">sem espaços, use hífen. Ex: gestao-documentos</div>
+      </div>
+
+      <div class="col-12 col-md-8">
+        <label class="form-label">URL</label>
+        <input class="form-control" name="url" required value="{{ dash.url if dash else '' }}" placeholder="https://...">
+      </div>
+
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Salvar</button>
+        <a class="btn btn-outline-light" href="{{ url_for('admin.dashboards_index') }}">Voltar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

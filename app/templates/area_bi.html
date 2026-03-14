@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Área de BI{% endblock %}
+{% block content %}
+
+<div class="bi-content">
+  <h1>Área de BI</h1>
+
+  {% if current_user.is_authenticated %}
+    <p class="info-text mb-4">
+      Logado como {{ current_user.name }}
+    </p>
+  {% endif %}
+
+  {% if not setores %}
+    <div class="alert alert-info">
+      Nenhum dashboard cadastrado ainda. Depois vamos popular a tabela <code>dashboard</code> no banco.
+    </div>
+  {% else %}
+
+    <div class="accordion" id="accSetores">
+      {% for setor, dashboards in setores.items() %}
+        {% set sid = 'setor-' ~ loop.index %}
+
+        <div class="accordion-item mb-2">
+          <h2 class="accordion-header" id="h-{{ sid }}">
+            <button
+              type="button"
+              class="accordion-button collapsed"
+              data-bs-toggle="collapse"
+              data-bs-target="#c-{{ sid }}"
+              aria-expanded="false"
+              aria-controls="c-{{ sid }}"
+            >
+              {{ setor }}
+            </button>
+          </h2>
+
+          <div
+            id="c-{{ sid }}"
+            class="accordion-collapse collapse"
+            aria-labelledby="h-{{ sid }}"
+            data-bs-parent="#accSetores"
+          >
+            <div class="accordion-body">
+              <div class="row g-3">
+                {% for d in dashboards %}
+                  <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card p-3">
+                      <h5 class="mb-2">{{ d.name }}</h5>
+                      <a class="btn btn-primary btn-sm"
+                         href="{{ url_for('main.dashboard_embed', sector=d.sector, slug=d.slug) }}">
+                        Abrir
+                      </a>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      {% endfor %}
+    </div>
+
+  {% endif %}
+</div>
+
+{% endblock %}

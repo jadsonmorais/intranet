@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Admin - Dashboards{% endblock %}
+
+{% block content %}
+<div class="bi-content admin-page">
+  <div class="admin-head">
+    <div>
+      <h1 class="admin-h1">Dashboards</h1>
+      <p class="admin-p">Cadastre, edite e remova dashboards e setores.</p>
+    </div>
+
+    <div class="admin-actions">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('admin.dashboards_new') }}">+ Novo dashboard</a>
+      <a class="btn btn-outline-light btn-sm" href="{{ url_for('admin.dashboards_import') }}">Importar em massa</a>
+      <form method="POST" action="{{ url_for('admin.dashboards_import') }}">
+        <input type="hidden" name="action" value="sheet">
+        <input type="hidden" name="mode" value="sync">
+        <input type="hidden" name="remove_missing" value="on">
+        <button class="btn btn-outline-light btn-sm" type="submit">Sincronizar do Sheets</button>
+      </form>
+    </div>
+  </div>
+
+  {% include "admin/_nav.html" %}
+
+  <div class="card p-3 mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-12 col-md-5">
+        <label class="form-label">Buscar</label>
+        <input class="form-control" name="q" value="{{ q or '' }}" placeholder="nome, slug ou url">
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Setor</label>
+        <select class="form-select" name="sector">
+          <option value="">Todos</option>
+          {% for s in sectors %}
+            <option value="{{ s }}" {% if sector == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-3 d-flex gap-2">
+        <button class="btn btn-outline-light w-100" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary w-100" href="{{ url_for('admin.dashboards_index') }}">Limpar</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card p-3">
+    <div class="table-responsive">
+      <table class="table table-dark table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Setor</th>
+            <th>Nome</th>
+            <th>Slug</th>
+            <th>URL</th>
+            <th class="text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in dashboards %}
+          <tr>
+            <td><span class="badge bg-secondary">{{ d.sector }}</span></td>
+            <td>{{ d.name }}</td>
+            <td><code>{{ d.slug }}</code></td>
+            <td class="text-truncate" style="max-width: 360px;">
+              <a class="link-light" href="{{ d.url }}" target="_blank">{{ d.url }}</a>
+            </td>
+            <td class="text-end d-flex gap-2 justify-content-end">
+              <a class="btn btn-sm btn-outline-light" href="{{ url_for('admin.dashboards_edit', dash_id=d.id) }}">Editar</a>
+
+              <form method="POST" action="{{ url_for('admin.dashboards_delete', dash_id=d.id) }}"
+                    onsubmit="return confirm('Tem certeza que deseja excluir este dashboard?');">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+
+          {% if dashboards|length == 0 %}
+          <tr>
+            <td colspan="5">
+              <div class="alert alert-info mb-0">Nenhum dashboard encontrado.</div>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

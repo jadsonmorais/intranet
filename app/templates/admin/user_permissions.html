@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Permissões - {{ user.name }}{% endblock %}
+
+{% block content %}
+<div class="bi-content admin-page">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">Permissões</h2>
+      <div class="info-text">{{ user.name }} — {{ user.email }}</div>
+    </div>
+    <a class="btn btn-outline-light btn-sm" href="{{ url_for('admin.index') }}">Voltar</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" class="card p-3">
+    {% for sector, items in sectors.items() %}
+      <div class="d-flex align-items-center justify-content-between mt-2 mb-2">
+        <h5 class="mb-0">{{ sector }}</h5>
+
+        <div class="d-flex gap-2">
+          <button
+            class="btn btn-sm btn-outline-light"
+            type="submit"
+            formaction="{{ url_for('admin.grant_sector', user_id=user.id) }}"
+            formmethod="POST"
+            name="sector"
+            value="{{ sector }}"
+          >
+            Liberar setor
+          </button>
+
+          <button
+            class="btn btn-sm btn-outline-danger"
+            type="submit"
+            formaction="{{ url_for('admin.revoke_sector', user_id=user.id) }}"
+            formmethod="POST"
+            name="sector"
+            value="{{ sector }}"
+          >
+            Remover setor
+          </button>
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        {% for d in items %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <label class="perm-item">
+            <input
+              type="checkbox"
+              name="dashboards"
+              value="{{ d.id }}"
+              {% if d.id in allowed_ids %}checked{% endif %}
+            >
+            <span class="perm-text">
+              <strong>{{ d.name }}</strong><br>
+              <small class="text-muted">{{ d.slug }}</small>
+            </span>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+      <hr>
+    {% endfor %}
+
+    <button class="btn btn-primary w-100" type="submit">
+      Salvar permissões
+    </button>
+  </form>
+</div>
+{% endblock %}

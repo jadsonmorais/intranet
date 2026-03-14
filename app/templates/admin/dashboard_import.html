@@ -1,0 +1,88 @@
+﻿{% extends "base.html" %}
+{% block title %}Admin - Importar Dashboards{% endblock %}
+
+{% block content %}
+<div class="bi-content admin-page">
+  <h2 class="mb-2">Importar Dashboards</h2>
+  <p class="info-text mb-3">
+    Cole linhas no formato: <code>SETOR | NOME | SLUG | URL</code><br>
+    Separador pode ser <code>|</code> ou <code>;</code> ou TAB.
+  </p>
+
+  {% include "admin/_nav.html" %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="card p-3">
+    <form method="POST">
+      <div class="mb-3">
+        <label class="form-label">Modo de importação</label>
+        <div class="d-flex flex-column gap-2">
+          <label class="perm-item">
+            <input type="radio" name="mode" value="sync" checked>
+            <span class="perm-text">
+              <strong>Atualizar por slug (recomendado)</strong><br>
+              <small class="text-muted">Atualiza existentes, cria novos e opcionalmente remove os que não estão na lista.</small>
+            </span>
+          </label>
+
+          <label class="perm-item">
+            <input type="radio" name="mode" value="replace">
+            <span class="perm-text">
+              <strong>Apagar tudo e recriar</strong><br>
+              <small class="text-muted">Remove todos os dashboards e permissões antes de importar.</small>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="perm-item">
+          <input type="checkbox" name="remove_missing" checked>
+          <span class="perm-text">
+            <strong>Remover dashboards que não estão na lista</strong><br>
+            <small class="text-muted">Mantém apenas os dashboards presentes no arquivo.</small>
+          </span>
+        </label>
+      </div>
+      <label class="form-label">Conteúdo</label>
+      <textarea class="form-control" name="bulk" rows="12" placeholder="QUALIDADE | 5S | 5s | https://..."></textarea>
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit" name="action" value="manual" id="import-submit">Importar</button>
+        <button class="btn btn-outline-light" type="submit" name="action" value="sheet">Sincronizar do Sheets</button>
+        <a class="btn btn-outline-light" href="{{ url_for('admin.dashboards_index') }}">Voltar</a>
+      </div>
+      <div class="form-text text-light mt-2">
+        Sincronizar do Sheets usa a planilha configurada no servidor.
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const form = document.querySelector('form');
+    if (!form) return;
+    form.addEventListener('submit', function (event) {
+      const mode = form.querySelector('input[name="mode"]:checked');
+      if (mode && mode.value === 'replace') {
+        const ok = window.confirm(
+          'Tem certeza? Este modo apaga todos os dashboards e permissões antes de importar.'
+        );
+        if (!ok) {
+          event.preventDefault();
+        }
+      }
+    });
+  })();
+</script>
+{% endblock %}
+
+

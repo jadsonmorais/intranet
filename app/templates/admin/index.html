@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bi-content admin-wrap">
+
+  <!-- HEADER -->
+  <div class="admin-head">
+    <div>
+      <h1 class="admin-h1">Administração</h1>
+      <p class="admin-p">Cadastre, edite e remova usuários e permissões.</p>
+    </div>
+
+    <form method="GET" action="{{ url_for('admin.index') }}" class="admin-search">
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Buscar por nome, email ou setor..."
+        class="admin-input"
+      >
+      <button type="submit" class="admin-btn">Buscar</button>
+      {% if q %}
+        <a href="{{ url_for('admin.index') }}" class="admin-btn">Limpar</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% include "admin/_nav.html" %}
+
+  <!-- CADASTRAR USUÁRIO -->
+  <div class="admin-card">
+    <h3 class="admin-h3">Cadastrar usuário</h3>
+
+    <form method="POST" action="{{ url_for('admin.create_user') }}" class="admin-form">
+      <div class="admin-field">
+        <label class="admin-label">E-mail *</label>
+        <input name="email" type="email" required class="admin-input">
+      </div>
+
+      <div class="admin-field">
+        <label class="admin-label">Nome (opcional)</label>
+        <input name="name" type="text" class="admin-input">
+      </div>
+
+      <div class="admin-field">
+        <label class="admin-label">Setor (opcional)</label>
+        <input name="sector" type="text" class="admin-input">
+      </div>
+
+      <div class="admin-checks">
+        <label class="admin-check">
+          <input type="checkbox" name="active" checked> Ativo
+        </label>
+
+        <label class="admin-check">
+          <input type="checkbox" name="is_admin"> Admin
+        </label>
+      </div>
+
+      <button type="submit" class="admin-btn admin-btn-ok">Cadastrar</button>
+    </form>
+  </div>
+
+  <!-- LISTA -->
+  <div class="admin-table-box">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width:22%">Nome</th>
+          <th style="width:24%">Email</th>
+          <th style="width:20%">Setor</th>
+          <th class="t-center" style="width:8%">Salvar</th>
+          <th class="t-center" style="width:6%">Ativo</th>
+          <th class="t-center" style="width:6%">Admin</th>
+          <th class="t-right" style="width:14%">Ações</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for user in users %}
+        <tr>
+
+          <!-- FORM UPDATE -->
+          <form method="POST" action="{{ url_for('admin.update_user', user_id=user.id) }}" class="row-form">
+            <td>
+              <input name="name" value="{{ user.name }}" class="admin-input-sm">
+            </td>
+
+            <td>
+              <input name="email" value="{{ user.email }}" class="admin-input-sm">
+            </td>
+
+            <td>
+              <input name="sector" value="{{ user.sector or '' }}" class="admin-input-sm">
+            </td>
+
+            <td class="t-center">
+              <button type="submit" class="admin-btn admin-btn-sm">Salvar</button>
+            </td>
+          </form>
+
+          <!-- ATIVO TOGGLE -->
+          <td class="t-center">
+            <form method="POST" action="{{ url_for('admin.toggle_active', user_id=user.id) }}">
+              <button
+                type="submit"
+                class="pill {% if user.active %}pill-ok{% else %}pill-no{% endif %}"
+                {% if user.email.lower() == 'suporte@carmelhoteis.com.br' %}disabled{% endif %}
+              >
+                {% if user.active %}Sim{% else %}Não{% endif %}
+              </button>
+            </form>
+          </td>
+
+          <!-- ADMIN TOGGLE -->
+          <td class="t-center">
+            <form method="POST" action="{{ url_for('admin.toggle_admin', user_id=user.id) }}">
+              <button
+                type="submit"
+                class="pill {% if user.is_admin %}pill-ok{% else %}pill-neu{% endif %}"
+                {% if user.email.lower() == 'suporte@carmelhoteis.com.br' %}disabled{% endif %}
+              >
+                {% if user.is_admin %}Sim{% else %}Não{% endif %}
+              </button>
+            </form>
+          </td>
+
+          <!-- AÇÕES -->
+          <td class="t-right">
+            <div class="actions-col">
+              <a href="{{ url_for('admin.user_permissions', user_id=user.id) }}" class="admin-btn admin-btn-sm">
+                Permissões
+              </a>
+
+              <form
+                method="POST"
+                action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                onsubmit="return confirm('Excluir este usuário definitivamente?');"
+              >
+                <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger">
+                  Excluir
+                </button>
+              </form>
+            </div>
+          </td>
+
+        </tr>
+        {% endfor %}
+
+        {% if users|length == 0 %}
+        <tr>
+          <td colspan="7" class="admin-empty">Nenhum usuário encontrado.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

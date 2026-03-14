@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtualenv
+venv/
+
+# SQLite / banco local
+instance/*.db
+instance/*.sqlite
+instance/*.sqlite3
+instance/google-service-account.json
+
+# VS Code
+.vscode/
+.env
+
+# Logs
+*.log
+server_current.err

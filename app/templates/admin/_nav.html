@@ -1,0 +1,11 @@
+<div class="admin-tabs">
+  <a class="admin-tab {% if request.path == '/admin/' or request.path == '/admin' %}is-active{% endif %}"
+     href="{{ url_for('admin.index') }}">
+    Usuários
+  </a>
+
+  <a class="admin-tab {% if request.path.startswith('/admin/dashboards') %}is-active{% endif %}"
+     href="{{ url_for('admin.dashboards_index') }}">
+    Dashboards
+  </a>
+</div>
