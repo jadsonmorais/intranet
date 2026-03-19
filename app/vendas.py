@@ -202,7 +202,7 @@ def _query_discrepancias(cur, hotel, tipo, data_inicio, data_fim, pagina):
                    v.ponto_venda,
                    p.data->>'Invoice Data Info 5' AS quarto
             FROM carmel.v_nfe_notas v
-            JOIN carmel.pdv_raw_notas p USING (nota_id)
+            LEFT JOIN carmel.pdv_raw_notas p USING (nota_id)
             WHERE v.tem_pdv AND ABS(v.valor_total - v.valor_pdv) > 0.01
               AND v.data_emissao::date BETWEEN %s AND %s
               {"AND v.hotel = %s" if hotel else ""}
