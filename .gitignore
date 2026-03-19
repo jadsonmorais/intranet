@@ -17,6 +17,9 @@ instance/google-service-account.json
 .vscode/
 .env
 
+# Dados sensíveis
+usuarios.csv
+
 # Logs
 *.log
 server_current.err
