@@ -24,7 +24,7 @@ def login_google():
 def login_zoho():
     client = getattr(oauth, "zoho", None)
     if not client:
-        flash("Login Zoho nÃ£o configurado. Solicite ao TI.", "danger")
+        flash("Login Zoho não configurado. Solicite ao TI.", "danger")
         return redirect(url_for("auth.login"))
 
     redirect_uri = url_for("auth.authorize_zoho", _external=True)
@@ -67,11 +67,10 @@ def authorize():
         user.name = name_from_google
         db.session.commit()
 
-    # Regra: conta suporte sempre admin
-    if email == "suporte@carmelhoteis.com.br":
-        if not user.is_admin:
-            user.is_admin = True
-            db.session.commit()
+    superadmin = current_app.config.get("SUPERADMIN_EMAIL", "").lower()
+    if email == superadmin and not user.is_admin:
+        user.is_admin = True
+        db.session.commit()
 
     login_user(user)
     return redirect(url_for("main.area_bi"))
@@ -81,7 +80,7 @@ def authorize():
 def authorize_zoho():
     client = getattr(oauth, "zoho", None)
     if not client:
-        flash("Login Zoho nÃ£o configurado. Solicite ao TI.", "danger")
+        flash("Login Zoho não configurado. Solicite ao TI.", "danger")
         return redirect(url_for("auth.login"))
 
     token = client.authorize_access_token()
@@ -103,7 +102,7 @@ def authorize_zoho():
     ).strip()
 
     if not email:
-        flash("NÃ£o foi possÃ­vel obter o e-mail do Zoho.", "danger")
+        flash("Não foi possível obter o e-mail do Zoho.", "danger")
         return redirect(url_for("auth.login"))
 
     allowed_domains = current_app.config.get("ALLOWED_EMAIL_DOMAINS", [])
@@ -116,18 +115,19 @@ def authorize_zoho():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        flash("Seu usuÃ¡rio ainda nÃ£o foi cadastrado pelo administrador. Solicite liberaÃ§Ã£o ao TI.", "danger")
+        flash("Seu usuário ainda não foi cadastrado pelo administrador. Solicite liberação ao TI.", "danger")
         return redirect(url_for("auth.login"))
 
     if not user.active:
-        flash("Seu usuÃ¡rio estÃ¡ inativo. Solicite liberaÃ§Ã£o ao TI.", "danger")
+        flash("Seu usuário está inativo. Solicite liberação ao TI.", "danger")
         return redirect(url_for("auth.login"))
 
     if (not user.name) and name_from_zoho:
         user.name = name_from_zoho
         db.session.commit()
 
-    if email == "suporte@carmelhoteis.com.br":
+    superadmin = current_app.config.get("SUPERADMIN_EMAIL", "").lower()
+    if email == superadmin:
         if not user.is_admin:
             user.is_admin = True
             db.session.commit()

@@ -92,7 +92,7 @@ def create_user():
     db.session.commit()
 
     # conta suporte sempre admin/ativa
-    if u.email.lower() == "suporte@carmelhoteis.com.br":
+    if u.email.lower() == current_app.config.get("SUPERADMIN_EMAIL", "").lower():
         u.is_admin = True
         u.active = True
         db.session.commit()
@@ -132,7 +132,7 @@ def update_user(user_id):
     u.sector = new_sector if new_sector else None
 
     # conta suporte sempre admin/ativa
-    if u.email.lower() == "suporte@carmelhoteis.com.br":
+    if u.email.lower() == current_app.config.get("SUPERADMIN_EMAIL", "").lower():
         u.is_admin = True
         u.active = True
 
@@ -147,7 +147,7 @@ def update_user(user_id):
 def toggle_admin(user_id):
     u = User.query.get_or_404(user_id)
 
-    if u.email.lower() == "suporte@carmelhoteis.com.br":
+    if u.email.lower() == current_app.config.get("SUPERADMIN_EMAIL", "").lower():
         flash("A conta suporte não pode perder admin.", "warning")
         return redirect(url_for("admin.index"))
 
@@ -163,7 +163,7 @@ def toggle_admin(user_id):
 def toggle_active(user_id):
     u = User.query.get_or_404(user_id)
 
-    if u.email.lower() == "suporte@carmelhoteis.com.br":
+    if u.email.lower() == current_app.config.get("SUPERADMIN_EMAIL", "").lower():
         flash("A conta suporte não pode ser inativada.", "warning")
         return redirect(url_for("admin.index"))
 
@@ -181,7 +181,7 @@ def delete_user(user_id):
     u = User.query.get_or_404(user_id)
 
     # protege suporte
-    if u.email.lower() == "suporte@carmelhoteis.com.br":
+    if u.email.lower() == current_app.config.get("SUPERADMIN_EMAIL", "").lower():
         flash("A conta suporte não pode ser excluída.", "warning")
         return redirect(url_for("admin.index"))
 

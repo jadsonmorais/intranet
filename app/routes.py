@@ -32,10 +32,9 @@ def dashboard_embed(sector, slug):
     if not dash:
         abort(404)
 
-    # (Opcional) se você quiser bloquear acesso ao embed caso não tenha permissão:
-    # allowed = UserDashboard.query.filter_by(user_id=current_user.id, dashboard_id=dash.id).first()
-    # if not allowed and not getattr(current_user, "is_admin", False):
-    #     abort(403)
+    allowed = UserDashboard.query.filter_by(user_id=current_user.id, dashboard_id=dash.id).first()
+    if not allowed and not getattr(current_user, "is_admin", False):
+        abort(403)
 
     return render_template("dashboard_embed.html", dashboard=dash)
 
