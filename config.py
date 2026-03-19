@@ -28,6 +28,8 @@ class Config:
     SERVER_NAME = os.environ.get("SERVER_NAME")  # ex: intranet.cm
     PREFERRED_URL_SCHEME = "https"
 
+    CARMEL_DB_URL = os.environ.get("CARMEL_DB_URL")
+
     SUPERADMIN_EMAIL = os.environ.get("SUPERADMIN_EMAIL", "suporte@carmelhoteis.com.br")
 
     # ✅ agora aceita múltiplos domínios

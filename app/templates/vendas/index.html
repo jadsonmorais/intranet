@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bi-content">
+  <h1 class="mb-4">Relatório de Vendas</h1>
+
+  <!-- Filtros -->
+  <form method="get" class="row g-2 mb-4 align-items-end">
+    <div class="col-12 col-md-2">
+      <label class="form-label fw-semibold">Hotel</label>
+      <select name="hotel" class="form-select form-select-sm">
+        <option value="">Todos</option>
+        {% for h in hoteis %}
+          <option value="{{ h }}" {% if filtros.hotel == h %}selected{% endif %}>{{ h }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label fw-semibold">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">Todos</option>
+        {% for s in status_opts %}
+          <option value="{{ s }}" {% if filtros.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label fw-semibold">Data início</label>
+      <input type="date" name="data_inicio" class="form-control form-control-sm"
+             value="{{ filtros.data_inicio }}">
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label fw-semibold">Data fim</label>
+      <input type="date" name="data_fim" class="form-control form-control-sm"
+             value="{{ filtros.data_fim }}">
+    </div>
+    <div class="col-12 col-md-2">
+      <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
+    </div>
+    <div class="col-12 col-md-2">
+      <a href="{{ url_for('vendas.index') }}" class="btn btn-outline-secondary btn-sm w-100">Limpar</a>
+    </div>
+  </form>
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <div class="fs-2 fw-bold text-primary">{{ kpis.total_notas }}</div>
+          <div class="text-muted small">Total de Notas</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <div class="fs-2 fw-bold text-success">{{ kpis.autorizadas }}</div>
+          <div class="text-muted small">Autorizadas</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <div class="fs-2 fw-bold text-danger">{{ kpis.canceladas }}</div>
+          <div class="text-muted small">Canceladas</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <div class="fs-2 fw-bold text-dark">
+            R$ {{ "%.2f"|format(kpis.valor_total|float) }}
+          </div>
+          <div class="text-muted small">Valor Total (sem canceladas)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- Tabela -->
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Data</th>
+          <th>Hotel</th>
+          <th>Nota</th>
+          <th>Série</th>
+          <th>Valor</th>
+          <th>Status</th>
+          <th>Ponto de Venda</th>
+          <th>Quarto</th>
+          <th>Garçom</th>
+          <th class="text-center">PDV</th>
+          <th class="text-center">Fiscal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if notas %}
+          {% for n in notas %}
+          <tr>
+            <td class="text-nowrap">{{ n.data }}</td>
+            <td>{{ n.hotel }}</td>
+            <td class="font-monospace small">{{ n.numero_nota }}</td>
+            <td>{{ n.serie }}</td>
+            <td class="text-end">R$ {{ "%.2f"|format(n.valor_total|float) }}</td>
+            <td>
+              {% if n.status == 'Autorizada' %}
+                <span class="badge bg-success">Autorizada</span>
+              {% elif n.status == 'Cancelada' %}
+                <span class="badge bg-danger">Cancelada</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Pendente SEFAZ</span>
+              {% endif %}
+            </td>
+            <td>{{ n.ponto_venda or '—' }}</td>
+            <td>{{ n.quarto or '—' }}</td>
+            <td>{{ n.garcom or '—' }}</td>
+            <td class="text-center">
+              {% if n.tem_pdv %}
+                <span class="text-success fw-bold">✓</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if n.tem_fiscal %}
+                <span class="text-success fw-bold">✓</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="11" class="text-center text-muted py-4">Nenhuma nota encontrada para os filtros selecionados.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginação -->
+  {% if total_paginas > 1 %}
+  <nav aria-label="Paginação">
+    <ul class="pagination pagination-sm justify-content-center flex-wrap">
+      <li class="page-item {% if pagina == 1 %}disabled{% endif %}">
+        <a class="page-link" href="?{{ request.query_string.decode() | replace('pagina=' ~ pagina, 'pagina=' ~ (pagina - 1)) }}">
+          &laquo;
+        </a>
+      </li>
+      {% for p in range(1, total_paginas + 1) %}
+        {% if p == pagina or p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+          <li class="page-item {% if p == pagina %}active{% endif %}">
+            <a class="page-link"
+               href="{{ url_for('vendas.index', hotel=filtros.hotel, status=filtros.status, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, pagina=p) }}">
+              {{ p }}
+            </a>
+          </li>
+        {% elif p == pagina - 3 or p == pagina + 3 %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if pagina == total_paginas %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('vendas.index', hotel=filtros.hotel, status=filtros.status, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, pagina=pagina + 1) }}">
+          &raquo;
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <p class="text-center text-muted small">
+    Exibindo página {{ pagina }} de {{ total_paginas }} ({{ total_notas }} notas no total)
+  </p>
+  {% endif %}
+
+</div>
+{% endblock %}
