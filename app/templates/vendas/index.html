@@ -2,25 +2,27 @@
 
 {% block content %}
 <div class="bi-content">
-  <h1 class="mb-4">Relatório de Vendas</h1>
+  <h1 class="mb-4">Discrepâncias de Vendas</h1>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
 
   <!-- Filtros -->
   <form method="get" class="row g-2 mb-4 align-items-end">
+    <input type="hidden" name="tipo" value="{{ tipo }}">
     <div class="col-12 col-md-2">
       <label class="form-label fw-semibold">Hotel</label>
       <select name="hotel" class="form-select form-select-sm">
         <option value="">Todos</option>
         {% for h in hoteis %}
           <option value="{{ h }}" {% if filtros.hotel == h %}selected{% endif %}>{{ h }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-12 col-md-2">
-      <label class="form-label fw-semibold">Status</label>
-      <select name="status" class="form-select form-select-sm">
-        <option value="">Todos</option>
-        {% for s in status_opts %}
-          <option value="{{ s }}" {% if filtros.status == s %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>
     </div>
@@ -42,112 +44,123 @@
     </div>
   </form>
 
-  <!-- KPIs -->
+  <!-- Cards de discrepância -->
   <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-      <div class="card text-center h-100">
-        <div class="card-body">
-          <div class="fs-2 fw-bold text-primary">{{ kpis.total_notas }}</div>
-          <div class="text-muted small">Total de Notas</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card text-center h-100">
-        <div class="card-body">
-          <div class="fs-2 fw-bold text-success">{{ kpis.autorizadas }}</div>
-          <div class="text-muted small">Autorizadas</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card text-center h-100">
-        <div class="card-body">
-          <div class="fs-2 fw-bold text-danger">{{ kpis.canceladas }}</div>
-          <div class="text-muted small">Canceladas</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card text-center h-100">
-        <div class="card-body">
-          <div class="fs-2 fw-bold text-dark">
-            R$ {{ "%.2f"|format(kpis.valor_total|float) }}
+    {% for t, label in tipos.items() %}
+      {% set n = contagens[t] %}
+      {% if n == 0 %}
+        {% set card_class = "bg-success text-white" %}
+      {% elif t in ["valor_divergente", "pendente_sefaz"] %}
+        {% set card_class = "bg-warning text-dark" %}
+      {% else %}
+        {% set card_class = "bg-danger text-white" %}
+      {% endif %}
+      <div class="col-6 col-md">
+        <a href="{{ url_for('vendas.index', tipo=t, hotel=filtros.hotel, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim) }}"
+           class="text-decoration-none">
+          <div class="card text-center h-100 {{ card_class }} {% if t == tipo %}border border-3 border-dark shadow{% endif %}">
+            <div class="card-body py-3">
+              <div class="fs-2 fw-bold">{{ n }}</div>
+              <div class="small">{{ label }}</div>
+            </div>
           </div>
-          <div class="text-muted small">Valor Total (sem canceladas)</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Flash messages -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </a>
       </div>
     {% endfor %}
-  {% endwith %}
+  </div>
 
-  <!-- Tabela -->
+  <!-- Tabela adaptativa -->
+  <h5 class="mb-3">{{ tipos[tipo] }}
+    <span class="text-muted fw-normal fs-6">({{ total_rows }} registro{{ 's' if total_rows != 1 else '' }})</span>
+  </h5>
+
   <div class="table-responsive">
     <table class="table table-sm table-hover align-middle">
       <thead class="table-dark">
         <tr>
-          <th>Data</th>
-          <th>Hotel</th>
-          <th>Nota</th>
-          <th>Série</th>
-          <th>Valor</th>
-          <th>Status</th>
-          <th>Ponto de Venda</th>
-          <th>Quarto</th>
-          <th>Garçom</th>
-          <th class="text-center">PDV</th>
-          <th class="text-center">Fiscal</th>
+          {% if tipo == "pdv_sem_nfe" %}
+            <th>Data</th><th>Hotel</th><th>Nota PDV</th><th class="text-end">Valor PDV</th>
+            <th>Ponto de Venda</th><th>Quarto</th><th>Garçom</th>
+          {% elif tipo == "nfe_sem_pdv" %}
+            <th>Data</th><th>Hotel</th><th>Nota</th><th>Série</th>
+            <th class="text-end">Valor NF-e</th><th>Ponto de Venda</th>
+          {% elif tipo == "nfe_sem_fiscal" %}
+            <th>Data</th><th>Hotel</th><th>Nota</th><th>Série</th>
+            <th class="text-end">Valor NF-e</th><th class="text-center">PDV</th>
+          {% elif tipo == "valor_divergente" %}
+            <th>Data</th><th>Hotel</th><th>Nota</th>
+            <th class="text-end">Valor NF-e</th><th class="text-end">Valor PDV</th>
+            <th class="text-end">Diferença</th><th>Quarto</th>
+          {% else %}{# pendente_sefaz #}
+            <th>Data</th><th>Hotel</th><th>Nota</th><th>Série</th>
+            <th class="text-end">Valor</th><th>Status SEFAZ</th>
+            <th class="text-center">PDV</th><th class="text-center">Fiscal</th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
-        {% if notas %}
-          {% for n in notas %}
+        {% if rows %}
+          {% for r in rows %}
           <tr>
-            <td class="text-nowrap">{{ n.data }}</td>
-            <td>{{ n.hotel }}</td>
-            <td class="font-monospace small">{{ n.numero_nota }}</td>
-            <td>{{ n.serie }}</td>
-            <td class="text-end">R$ {{ "%.2f"|format(n.valor_total|float) }}</td>
-            <td>
-              {% if n.status == 'Autorizada' %}
-                <span class="badge bg-success">Autorizada</span>
-              {% elif n.status == 'Cancelada' %}
-                <span class="badge bg-danger">Cancelada</span>
-              {% else %}
-                <span class="badge bg-warning text-dark">Pendente SEFAZ</span>
-              {% endif %}
-            </td>
-            <td>{{ n.ponto_venda or '—' }}</td>
-            <td>{{ n.quarto or '—' }}</td>
-            <td>{{ n.garcom or '—' }}</td>
-            <td class="text-center">
-              {% if n.tem_pdv %}
-                <span class="text-success fw-bold">✓</span>
-              {% else %}
-                <span class="text-muted">—</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              {% if n.tem_fiscal %}
-                <span class="text-success fw-bold">✓</span>
-              {% else %}
-                <span class="text-muted">—</span>
-              {% endif %}
-            </td>
+            {% if tipo == "pdv_sem_nfe" %}
+              <td class="text-nowrap">{{ r.data }}</td>
+              <td>{{ r.hotel }}</td>
+              <td class="font-monospace small">{{ r.numero_nota or r.chave_nfe }}</td>
+              <td class="text-end">R$ {{ "%.2f"|format(r.valor|float) }}</td>
+              <td>{{ r.ponto_venda or '—' }}</td>
+              <td>{{ r.quarto or '—' }}</td>
+              <td>{{ r.garcom or '—' }}</td>
+            {% elif tipo == "nfe_sem_pdv" %}
+              <td class="text-nowrap">{{ r.data }}</td>
+              <td>{{ r.hotel }}</td>
+              <td class="font-monospace small">{{ r.numero_nota }}</td>
+              <td>{{ r.serie }}</td>
+              <td class="text-end">R$ {{ "%.2f"|format(r.valor_total|float) }}</td>
+              <td>{{ r.ponto_venda or '—' }}</td>
+            {% elif tipo == "nfe_sem_fiscal" %}
+              <td class="text-nowrap">{{ r.data }}</td>
+              <td>{{ r.hotel }}</td>
+              <td class="font-monospace small">{{ r.numero_nota }}</td>
+              <td>{{ r.serie }}</td>
+              <td class="text-end">R$ {{ "%.2f"|format(r.valor_total|float) }}</td>
+              <td class="text-center">
+                {% if r.tem_pdv %}<span class="text-success fw-bold">✓</span>{% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+            {% elif tipo == "valor_divergente" %}
+              <td class="text-nowrap">{{ r.data }}</td>
+              <td>{{ r.hotel }}</td>
+              <td class="font-monospace small">{{ r.numero_nota }}</td>
+              <td class="text-end">R$ {{ "%.2f"|format(r.valor_total|float) }}</td>
+              <td class="text-end">R$ {{ "%.2f"|format(r.valor_pdv|float) }}</td>
+              <td class="text-end fw-bold {% if r.diferenca > 0 %}text-danger{% else %}text-warning{% endif %}">
+                R$ {{ "%.2f"|format(r.diferenca|float) }}
+              </td>
+              <td>{{ r.quarto or '—' }}</td>
+            {% else %}{# pendente_sefaz #}
+              <td class="text-nowrap">{{ r.data }}</td>
+              <td>{{ r.hotel }}</td>
+              <td class="font-monospace small">{{ r.numero_nota }}</td>
+              <td>{{ r.serie }}</td>
+              <td class="text-end">R$ {{ "%.2f"|format(r.valor_total|float) }}</td>
+              <td><span class="badge bg-warning text-dark">{{ r.status_sefaz or 'Pendente' }}</span></td>
+              <td class="text-center">
+                {% if r.tem_pdv %}<span class="text-success fw-bold">✓</span>{% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+              <td class="text-center">
+                {% if r.tem_fiscal %}<span class="text-success fw-bold">✓</span>{% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+            {% endif %}
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="11" class="text-center text-muted py-4">Nenhuma nota encontrada para os filtros selecionados.</td>
+            <td colspan="8" class="text-center text-muted py-4">
+              {% if contagens[tipo] == 0 %}
+                Nenhuma discrepância encontrada. ✓
+              {% else %}
+                Nenhum registro encontrado para os filtros selecionados.
+              {% endif %}
+            </td>
           </tr>
         {% endif %}
       </tbody>
@@ -159,7 +172,8 @@
   <nav aria-label="Paginação">
     <ul class="pagination pagination-sm justify-content-center flex-wrap">
       <li class="page-item {% if pagina == 1 %}disabled{% endif %}">
-        <a class="page-link" href="?{{ request.query_string.decode() | replace('pagina=' ~ pagina, 'pagina=' ~ (pagina - 1)) }}">
+        <a class="page-link"
+           href="{{ url_for('vendas.index', tipo=tipo, hotel=filtros.hotel, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, pagina=pagina - 1) }}">
           &laquo;
         </a>
       </li>
@@ -167,7 +181,7 @@
         {% if p == pagina or p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
           <li class="page-item {% if p == pagina %}active{% endif %}">
             <a class="page-link"
-               href="{{ url_for('vendas.index', hotel=filtros.hotel, status=filtros.status, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, pagina=p) }}">
+               href="{{ url_for('vendas.index', tipo=tipo, hotel=filtros.hotel, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, pagina=p) }}">
               {{ p }}
             </a>
           </li>
@@ -176,14 +190,15 @@
         {% endif %}
       {% endfor %}
       <li class="page-item {% if pagina == total_paginas %}disabled{% endif %}">
-        <a class="page-link" href="{{ url_for('vendas.index', hotel=filtros.hotel, status=filtros.status, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, pagina=pagina + 1) }}">
+        <a class="page-link"
+           href="{{ url_for('vendas.index', tipo=tipo, hotel=filtros.hotel, data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, pagina=pagina + 1) }}">
           &raquo;
         </a>
       </li>
     </ul>
   </nav>
   <p class="text-center text-muted small">
-    Exibindo página {{ pagina }} de {{ total_paginas }} ({{ total_notas }} notas no total)
+    Página {{ pagina }} de {{ total_paginas }} ({{ total_rows }} registros)
   </p>
   {% endif %}
 
