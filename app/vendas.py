@@ -64,8 +64,10 @@ def _count_discrepancias(cur, hotel, data_inicio, data_fim):
     cur.execute(
         f"""
         SELECT COUNT(*) AS n
-        FROM carmel.v_vendas_notas
-        WHERE tem_pdv = FALSE AND status = 'Autorizada'
+        FROM carmel.v_nfe_notas
+        WHERE tem_pdv = FALSE
+          AND status_sefaz = '100'
+          AND cancelada = FALSE
           AND data_emissao::date BETWEEN %s AND %s
           {hotel_clause_v}
         """,
@@ -90,7 +92,7 @@ def _count_discrepancias(cur, hotel, data_inicio, data_fim):
     cur.execute(
         f"""
         SELECT COUNT(*) AS n
-        FROM carmel.v_vendas_notas
+        FROM carmel.v_nfe_notas
         WHERE tem_pdv AND ABS(valor_total - valor_pdv) > 0.01
           AND data_emissao::date BETWEEN %s AND %s
           {hotel_clause_v}
@@ -103,8 +105,9 @@ def _count_discrepancias(cur, hotel, data_inicio, data_fim):
     cur.execute(
         f"""
         SELECT COUNT(*) AS n
-        FROM carmel.v_vendas_notas
-        WHERE status = 'Pendente SEFAZ'
+        FROM carmel.v_nfe_notas
+        WHERE cancelada = FALSE
+          AND status_sefaz != '100'
           AND data_emissao::date BETWEEN %s AND %s
           {hotel_clause_v}
         """,
@@ -147,16 +150,20 @@ def _query_discrepancias(cur, hotel, tipo, data_inicio, data_fim, pagina):
     elif tipo == "nfe_sem_pdv":
         count_sql = f"""
             SELECT COUNT(*) AS total
-            FROM carmel.v_vendas_notas
-            WHERE tem_pdv = FALSE AND status = 'Autorizada'
+            FROM carmel.v_nfe_notas
+            WHERE tem_pdv = FALSE
+              AND status_sefaz = '100'
+              AND cancelada = FALSE
               AND data_emissao::date BETWEEN %s AND %s
               {hotel_clause_v}
         """
         data_sql = f"""
             SELECT nota_id, hotel, data_emissao::date AS data, numero_nota,
                    serie, valor_total, ponto_venda
-            FROM carmel.v_vendas_notas
-            WHERE tem_pdv = FALSE AND status = 'Autorizada'
+            FROM carmel.v_nfe_notas
+            WHERE tem_pdv = FALSE
+              AND status_sefaz = '100'
+              AND cancelada = FALSE
               AND data_emissao::date BETWEEN %s AND %s
               {hotel_clause_v}
             ORDER BY data_emissao DESC
@@ -183,36 +190,40 @@ def _query_discrepancias(cur, hotel, tipo, data_inicio, data_fim, pagina):
     elif tipo == "valor_divergente":
         count_sql = f"""
             SELECT COUNT(*) AS total
-            FROM carmel.v_vendas_notas
+            FROM carmel.v_nfe_notas
             WHERE tem_pdv AND ABS(valor_total - valor_pdv) > 0.01
               AND data_emissao::date BETWEEN %s AND %s
               {hotel_clause_v}
         """
         data_sql = f"""
-            SELECT nota_id, hotel, data_emissao::date AS data, numero_nota,
-                   valor_total, valor_pdv,
-                   valor_total - valor_pdv AS diferenca,
-                   ponto_venda, quarto
-            FROM carmel.v_vendas_notas
-            WHERE tem_pdv AND ABS(valor_total - valor_pdv) > 0.01
-              AND data_emissao::date BETWEEN %s AND %s
-              {hotel_clause_v}
-            ORDER BY ABS(valor_total - valor_pdv) DESC
+            SELECT v.nota_id, v.hotel, v.data_emissao::date AS data, v.numero_nota,
+                   v.valor_total, v.valor_pdv,
+                   v.valor_total - v.valor_pdv AS diferenca,
+                   v.ponto_venda,
+                   p.data->>'Invoice Data Info 5' AS quarto
+            FROM carmel.v_nfe_notas v
+            JOIN carmel.pdv_raw_notas p USING (nota_id)
+            WHERE v.tem_pdv AND ABS(v.valor_total - v.valor_pdv) > 0.01
+              AND v.data_emissao::date BETWEEN %s AND %s
+              {"AND v.hotel = %s" if hotel else ""}
+            ORDER BY ABS(v.valor_total - v.valor_pdv) DESC
             LIMIT %s OFFSET %s
         """
     else:  # pendente_sefaz
         count_sql = f"""
             SELECT COUNT(*) AS total
-            FROM carmel.v_vendas_notas
-            WHERE status = 'Pendente SEFAZ'
+            FROM carmel.v_nfe_notas
+            WHERE cancelada = FALSE
+              AND status_sefaz != '100'
               AND data_emissao::date BETWEEN %s AND %s
               {hotel_clause_v}
         """
         data_sql = f"""
             SELECT nota_id, hotel, data_emissao::date AS data, numero_nota,
-                   serie, valor_total, status_sefaz, tem_pdv, tem_fiscal
-            FROM carmel.v_vendas_notas
-            WHERE status = 'Pendente SEFAZ'
+                   serie, valor_total, status_sefaz, tem_pdv
+            FROM carmel.v_nfe_notas
+            WHERE cancelada = FALSE
+              AND status_sefaz != '100'
               AND data_emissao::date BETWEEN %s AND %s
               {hotel_clause_v}
             ORDER BY data_emissao DESC

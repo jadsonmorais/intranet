@@ -94,7 +94,7 @@
           {% else %}{# pendente_sefaz #}
             <th>Data</th><th>Hotel</th><th>Nota</th><th>Série</th>
             <th class="text-end">Valor</th><th>Status SEFAZ</th>
-            <th class="text-center">PDV</th><th class="text-center">Fiscal</th>
+            <th class="text-center">PDV</th>
           {% endif %}
         </tr>
       </thead>
@@ -145,9 +145,6 @@
               <td><span class="badge bg-warning text-dark">{{ r.status_sefaz or 'Pendente' }}</span></td>
               <td class="text-center">
                 {% if r.tem_pdv %}<span class="text-success fw-bold">✓</span>{% else %}<span class="text-muted">—</span>{% endif %}
-              </td>
-              <td class="text-center">
-                {% if r.tem_fiscal %}<span class="text-success fw-bold">✓</span>{% else %}<span class="text-muted">—</span>{% endif %}
               </td>
             {% endif %}
           </tr>
