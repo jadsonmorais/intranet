@@ -46,9 +46,7 @@
       <div class="d-flex align-items-center ms-auto gap-2">
         {% if current_user.is_authenticated %}
 
-          <a href="{{ url_for('vendas.index') }}" class="btn btn-outline-light btn-sm">
-            Vendas
-          </a>
+          {# botão vendas desabilitado: relatório migrado para Power BI #}
 
           {% if current_user.is_admin %}
             <a href="{{ url_for('admin.index') }}" class="btn btn-outline-light btn-sm">
