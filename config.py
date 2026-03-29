@@ -33,6 +33,9 @@ class Config:
     SUPERADMIN_EMAIL = os.environ.get("SUPERADMIN_EMAIL", "suporte@carmelhoteis.com.br")
 
     # ✅ agora aceita múltiplos domínios
+    _extra_domains = [
+        d.strip() for d in os.environ.get("EXTRA_ALLOWED_DOMAINS", "").split(",") if d.strip()
+    ]
     ALLOWED_EMAIL_DOMAINS = [
         "carmelhoteis.com.br",
         "carmelcharme.com.br",
@@ -40,4 +43,4 @@ class Config:
         "carmeltaiba.com.br",
         "magnapraiahotel.com.br",
         "magnaloc.com.br",
-    ]
+    ] + _extra_domains
